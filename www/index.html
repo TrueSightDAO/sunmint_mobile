@@ -390,9 +390,34 @@
       return bytes.buffer;
     }
 
+    // PR8: RSA identity storage. Native (mobile): @aparajita/capacitor-secure-storage
+    // (Android Keystore / iOS Keychain). Web (browser dev): localStorage, unchanged.
+    // Same crypto scheme, same SPKI/PKCS8 base64 export format (\u00a71.3) \u2014 Edgar
+    // sees byte-identical signed payloads either way. Keygen/sign stay on
+    // crypto.subtle (byte-compat proven in PR4).
+    async function secureStorageGet(key) {
+      try {
+        if (typeof Capacitor !== 'undefined' && Capacitor.Plugins && Capacitor.Plugins.SecureStorage) {
+          const v = await Capacitor.Plugins.SecureStorage.getItem(key);
+          if (v !== null && v !== undefined) return v;
+        }
+      } catch (_) { /* fall back to localStorage */ }
+      return localStorage.getItem(key);
+    }
+
+    async function secureStorageSet(key, value) {
+      try {
+        if (typeof Capacitor !== 'undefined' && Capacitor.Plugins && Capacitor.Plugins.SecureStorage) {
+          await Capacitor.Plugins.SecureStorage.setItem(key, value);
+          return;
+        }
+      } catch (_) { /* fall back to localStorage */ }
+      localStorage.setItem(key, value);
+    }
+
     async function ensureKeyPair() {
-      let publicKey = localStorage.getItem('publicKey');
-      let privateKey = localStorage.getItem('privateKey');
+      let publicKey = await secureStorageGet('publicKey');
+      let privateKey = await secureStorageGet('privateKey');
       if (publicKey && privateKey) return { publicKey, privateKey };
 
       const keyPair = await window.crypto.subtle.generateKey(
@@ -404,8 +429,8 @@
       const privateKeyRaw = await window.crypto.subtle.exportKey('pkcs8', keyPair.privateKey);
       publicKey = arrayBufferToBase64(publicKeyRaw);
       privateKey = arrayBufferToBase64(privateKeyRaw);
-      localStorage.setItem('publicKey', publicKey);
-      localStorage.setItem('privateKey', privateKey);
+      await secureStorageSet('publicKey', publicKey);
+      await secureStorageSet('privateKey', privateKey);
       return { publicKey, privateKey };
     }
 
