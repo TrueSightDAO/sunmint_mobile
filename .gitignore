@@ -3,3 +3,9 @@ dist/
 web-build/
 .DS_Store
 *.log
+/android/local.properties
+/android/.idea/
+/android/app/build/
+/android/build/
+/android/.gradle/
+/android/capacitor-cordova-android-plugins/build/
