@@ -545,6 +545,65 @@
     const TREE_QUEUE_DB = 'sunmint_offline';
     const TREE_QUEUE_STORE = 'tree_reports';
 
+    // PR7: offline queue storage. Native (mobile): @capacitor-community/sqlite
+    // for report metadata + @capacitor/filesystem for photo blobs (avoids
+    // WebView IndexedDB eviction under disk pressure, per \u00a70.5). Web
+    // (browser dev): IndexedDB, unchanged. Function signatures are identical
+    // so every call site (queue\u2192flush\u2192mark-uploaded lifecycle, 409-as-success,
+    // pending-badge UI) is untouched.
+
+    function isNativeQueue() {
+      return typeof Capacitor !== 'undefined' && Capacitor.Plugins &&
+             Capacitor.Plugins.SQLite && Capacitor.Plugins.Filesystem &&
+             Capacitor.getPlatform && Capacitor.getPlatform() !== 'web';
+    }
+
+    let queueDbReady = null; // memoized init promise
+
+    async function ensureQueueDb() {
+      if (queueDbReady) return queueDbReady;
+      queueDbReady = (async () => {
+        const SQLite = Capacitor.Plugins.SQLite;
+        await SQLite.createConnection({ database: TREE_QUEUE_DB, version: 1, encrypted: false, mode: 'no-encryption' });
+        await SQLite.open({ database: TREE_QUEUE_DB });
+        await SQLite.execute({
+          database: TREE_QUEUE_DB,
+          statements: 'CREATE TABLE IF NOT EXISTS ' + TREE_QUEUE_STORE + ' (' +
+            'id TEXT PRIMARY KEY NOT NULL,' +
+            'shareText TEXT NOT NULL,' +
+            'photoPath TEXT NOT NULL,' +
+            'photoName TEXT NOT NULL,' +
+            'createdAt TEXT NOT NULL,' +
+            'uploaded INTEGER NOT NULL DEFAULT 0,' +
+            'uploadedAt TEXT);',
+        });
+        // Ensure the photo directory exists (ignore if already present).
+        await Capacitor.Plugins.Filesystem.mkdir({
+          path: 'reports',
+          directory: Capacitor.Plugins.FilesystemDirectory.Documents,
+          recursive: true,
+        }).catch(function () {});
+      })();
+      return queueDbReady;
+    }
+
+    function blobToBase64(blob) {
+      return new Promise(function (resolve, reject) {
+        const fr = new FileReader();
+        fr.onload = function () { resolve(String(fr.result).split(',')[1] || ''); };
+        fr.onerror = function () { reject(fr.error); };
+        fr.readAsDataURL(blob);
+      });
+    }
+
+    function base64ToBlob(b64, type) {
+      const bin = atob(b64);
+      const arr = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+      return new Blob([arr], { type: type });
+    }
+
+    // ---- IndexedDB fallback (web build) ----
     function openTreeQueueDB() {
       return new Promise((resolve, reject) => {
         const req = indexedDB.open(TREE_QUEUE_DB, 1);
@@ -557,6 +616,22 @@
     }
 
     async function queueTreeReport(record) {
+      if (isNativeQueue()) {
+        await ensureQueueDb();
+        const photoPath = record.id + '.jpg';
+        await Capacitor.Plugins.Filesystem.writeFile({
+          path: 'reports/' + photoPath,
+          directory: Capacitor.Plugins.FilesystemDirectory.Documents,
+          data: await blobToBase64(record.photoBlob),
+        });
+        await Capacitor.Plugins.SQLite.run({
+          database: TREE_QUEUE_DB,
+          statement: 'INSERT OR REPLACE INTO ' + TREE_QUEUE_STORE +
+            ' (id, shareText, photoPath, photoName, createdAt, uploaded, uploadedAt) VALUES (?, ?, ?, ?, ?, 0, NULL);',
+          values: [record.id, record.shareText, photoPath, record.photoName, record.createdAt],
+        });
+        return;
+      }
       const db = await openTreeQueueDB();
       return new Promise((resolve, reject) => {
         const tx = db.transaction(TREE_QUEUE_STORE, 'readwrite');
@@ -567,6 +642,31 @@
     }
 
     async function getPendingTreeReports() {
+      if (isNativeQueue()) {
+        await ensureQueueDb();
+        const res = await Capacitor.Plugins.SQLite.query({
+          database: TREE_QUEUE_DB,
+          statement: 'SELECT * FROM ' + TREE_QUEUE_STORE + ' WHERE uploaded = 0;',
+        });
+        const rows = (res && res.values) || [];
+        const out = [];
+        for (const row of rows) {
+          const photoRes = await Capacitor.Plugins.Filesystem.readFile({
+            path: 'reports/' + row.photoPath,
+            directory: Capacitor.Plugins.FilesystemDirectory.Documents,
+          });
+          out.push({
+            id: row.id,
+            shareText: row.shareText,
+            photoBlob: base64ToBlob(photoRes.data, 'image/jpeg'),
+            photoName: row.photoName,
+            createdAt: row.createdAt,
+            uploaded: false,
+            uploadedAt: null,
+          });
+        }
+        return out;
+      }
       const db = await openTreeQueueDB();
       return new Promise((resolve, reject) => {
         const tx = db.transaction(TREE_QUEUE_STORE, 'readonly');
@@ -577,6 +677,15 @@
     }
 
     async function markTreeReportUploaded(id) {
+      if (isNativeQueue()) {
+        await ensureQueueDb();
+        await Capacitor.Plugins.SQLite.run({
+          database: TREE_QUEUE_DB,
+          statement: 'UPDATE ' + TREE_QUEUE_STORE + ' SET uploaded = 1, uploadedAt = ? WHERE id = ?;',
+          values: [new Date().toISOString(), id],
+        });
+        return;
+      }
       const db = await openTreeQueueDB();
       return new Promise((resolve, reject) => {
         const tx = db.transaction(TREE_QUEUE_STORE, 'readwrite');
