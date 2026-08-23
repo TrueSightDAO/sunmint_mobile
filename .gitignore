@@ -9,3 +9,4 @@ web-build/
 /android/build/
 /android/.gradle/
 /android/capacitor-cordova-android-plugins/build/
+android/keystore.properties
