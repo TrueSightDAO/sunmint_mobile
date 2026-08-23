@@ -682,7 +682,7 @@
         // Ensure the photo directory exists (ignore if already present).
         await Capacitor.Plugins.Filesystem.mkdir({
           path: 'reports',
-          directory: Capacitor.Plugins.FilesystemDirectory.Documents,
+          directory: "DOCUMENTS",
           recursive: true,
         }).catch(function () {});
       })();
@@ -723,7 +723,7 @@
         const photoPath = record.id + '.jpg';
         await Capacitor.Plugins.Filesystem.writeFile({
           path: 'reports/' + photoPath,
-          directory: Capacitor.Plugins.FilesystemDirectory.Documents,
+          directory: "DOCUMENTS",
           data: await blobToBase64(record.photoBlob),
         });
         await Capacitor.Plugins.SQLite.run({
@@ -755,7 +755,7 @@
         for (const row of rows) {
           const photoRes = await Capacitor.Plugins.Filesystem.readFile({
             path: 'reports/' + row.photoPath,
-            directory: Capacitor.Plugins.FilesystemDirectory.Documents,
+            directory: "DOCUMENTS",
           });
           out.push({
             id: row.id,
@@ -909,8 +909,8 @@
       try {
         const photo = await Capacitor.Plugins.Camera.getPhoto({
           quality: 90,                                  // matches canvas.toBlob(..., 0.9)
-          source: Capacitor.Plugins.CameraSource.Camera, // live capture only, no gallery
-          resultType: Capacitor.Plugins.CameraResultType.Uri, // file URI (blob not needed)
+          source: "CAMERA", // live capture only, no gallery (CameraSource.Camera enum value)
+          resultType: "uri", // file URI (blob not needed) (CameraResultType.Uri enum value)
           allowEditing: false,
           saveToGallery: false,
           correctOrientation: true,
