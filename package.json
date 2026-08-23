@@ -8,7 +8,8 @@
   "description": "SunMint farmer app - native Android/iOS (Capacitor) - tree planting reports + email linking, offline-first",
   "dependencies": {
     "@capacitor/android": "^8.5.0",
-    "@capacitor/core": "^8.5.0"
+    "@capacitor/core": "^8.5.0",
+    "@capacitor/geolocation": "^8.2.2"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.5.0"

@@ -516,13 +516,30 @@
     let latitude = null;
     let longitude = null;
 
-    function requestLocation() {
-      if (!navigator.geolocation) return;
-      navigator.geolocation.getCurrentPosition(
-        (pos) => { latitude = pos.coords.latitude; longitude = pos.coords.longitude; },
-        () => { /* optional — submission proceeds without location */ },
-        { timeout: 8000 }
-      );
+    // PR6: native geolocation via @capacitor/geolocation (replaces navigator.geolocation).
+    // Same optional/non-blocking contract as the web app: 8s timeout; if denied,
+    // unavailable, or timed out the report still submits with blank lat/long + the
+    // inline "(location not available)" note. Never blocks submission.
+    async function requestLocation() {
+      try {
+        if (typeof Capacitor !== 'undefined' && Capacitor.Plugins && Capacitor.Plugins.Geolocation) {
+          const pos = await Capacitor.Plugins.Geolocation.getCurrentPosition({
+            timeout: 8000,
+            maximumAge: 60000,
+          });
+          latitude = pos.coords.latitude;
+          longitude = pos.coords.longitude;
+        } else if (navigator.geolocation) {
+          // Browser fallback (e.g. local dev of the web build)
+          navigator.geolocation.getCurrentPosition(
+            (p) => { latitude = p.coords.latitude; longitude = p.coords.longitude; },
+            () => { /* optional — submission proceeds without location */ },
+            { timeout: 8000 }
+          );
+        }
+      } catch (_) {
+        // Permission denied / unavailable / timeout — proceed without location.
+      }
     }
 
     const TREE_QUEUE_DB = 'sunmint_offline';
