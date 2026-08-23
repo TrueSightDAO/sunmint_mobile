@@ -661,9 +661,8 @@
     }
 
     async function startTreeCamera() {
-      const video = document.getElementById('treeCameraPreview');
       const cameraStatus = document.getElementById('cameraStatus');
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      if (typeof Capacitor === 'undefined' || !Capacitor.Plugins || !Capacitor.Plugins.Camera) {
         cameraStatus.textContent = t('cameraUnsupported');
         cameraStatus.className = 'error';
         document.getElementById('captureBtn').disabled = true;
@@ -671,49 +670,43 @@
       }
       cameraStatus.textContent = t('cameraStarting');
       cameraStatus.className = '';
-      const constraints = {
-        video: isMobileDevice()
-          ? { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
-          : true,
-      };
-      try {
-        cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
-        video.srcObject = cameraStream;
-        video.style.display = 'block';
-        cameraStatus.textContent = '';
-      } catch (err) {
-        cameraStatus.textContent = t('cameraError') + err.message;
-        cameraStatus.className = 'error';
-        document.getElementById('captureBtn').disabled = true;
-      }
+      document.getElementById('captureBtn').disabled = false;
+      // No persistent preview stream with the native camera — the capture dialog
+      // IS the live preview. Status clears when capture succeeds (see capturePhoto).
     }
 
-    function capturePhoto() {
-      const video = document.getElementById('treeCameraPreview');
-      const canvas = document.getElementById('treeCaptureCanvas');
-      const preview = document.getElementById('treePhotoPreview');
+    async function capturePhoto() {
       const cameraStatus = document.getElementById('cameraStatus');
-      if (!cameraStream || !video.srcObject) {
-        cameraStatus.textContent = t('cameraUnsupported');
-        cameraStatus.className = 'error';
-        return;
-      }
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-      canvas.toBlob((blob) => {
-        capturedPhotoBlob = blob;
+      const preview = document.getElementById('treePhotoPreview');
+      try {
+        const photo = await Capacitor.Plugins.Camera.getPhoto({
+          quality: 90,                                  // matches canvas.toBlob(..., 0.9)
+          source: Capacitor.Plugins.CameraSource.Camera, // live capture only, no gallery
+          resultType: Capacitor.Plugins.CameraResultType.Uri, // file URI (blob not needed)
+          allowEditing: false,
+          saveToGallery: false,
+          correctOrientation: true,
+        });
+        capturedPhotoBlob = await fetch(Capacitor.convertFileSrc(photo.webPath)).then(r => r.blob());
+        capturedPhotoBlob = new Blob([capturedPhotoBlob], { type: 'image/jpeg' });
         if (preview.dataset.objectUrl) URL.revokeObjectURL(preview.dataset.objectUrl);
-        const url = URL.createObjectURL(blob);
+        const url = URL.createObjectURL(capturedPhotoBlob);
         preview.src = url;
         preview.dataset.objectUrl = url;
         preview.style.display = 'block';
-        video.style.display = 'none';
+        document.getElementById('treeCameraPreview').style.display = 'none';
         document.getElementById('captureBtn').style.display = 'none';
         document.getElementById('retakeBtn').style.display = 'block';
         cameraStatus.textContent = t('photoCaptured');
         cameraStatus.className = 'success';
-      }, 'image/jpeg', 0.9);
+      } catch (err) {
+        if (err && err.message && err.message.includes('cancel')) {
+          cameraStatus.textContent = ''; // user dismissed the camera — no error state
+        } else {
+          cameraStatus.textContent = t('cameraError') + (err && err.message ? err.message : err);
+          cameraStatus.className = 'error';
+        }
+      }
     }
 
     function retakePhoto() {
