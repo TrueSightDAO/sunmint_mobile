@@ -8,6 +8,18 @@
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
         <string>Sunmint</string>
+	<!-- PR14: custom URL scheme for verification deep links (sunmint://...?vk=&em=) -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>me.truesight.sunmint</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>sunmint</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
