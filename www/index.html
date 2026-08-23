@@ -253,6 +253,12 @@
     <label for="emailInput" data-i18n="emailLabel">Seu email</label>
     <input type="email" id="emailInput" placeholder="voce@exemplo.com" autocomplete="email">
     <button class="submit-btn" id="emailSubmitBtn" onclick="submitEmailLink()" data-i18n="emailButton">Vincular email</button>
+    <details id="pasteVerifySection" style="margin-top:10px;">
+      <summary class="hint" data-i18n="pasteVerifySummary">Já recebeu o email de verificação? Cole o link aqui.</summary>
+      <label for="verifyLinkInput" data-i18n="pasteVerifyLabel">Link de verificação do email</label>
+      <input type="text" id="verifyLinkInput" placeholder="https://sunmint.truesight.me/?vk=...&em=..." inputmode="url" autocomplete="off">
+      <button class="submit-btn" id="verifyPasteBtn" onclick="pasteVerificationLink()" data-i18n="pasteVerifyButton">Verificar link colado</button>
+    </details>
     <div id="status" aria-live="polite"></div>
   </div>
 
@@ -272,6 +278,10 @@
         emailHint: "Seu email é usado para identificá-lo na TrueSight DAO. Isso cria (ou reutiliza) sua assinatura digital neste telefone/navegador.",
         emailLabel: "Seu email",
         emailButton: "Vincular email",
+        pasteVerifySummary: "Já recebeu o email de verificação? Cole o link aqui.",
+        pasteVerifyLabel: "Link de verificação do email",
+        pasteVerifyButton: "Verificar link colado",
+        pasteVerifyInvalid: "Link inválido — não encontrei vk= e em= no link.",
         treeHeading: "Registrar plantio de árvore",
         treeHint: "Tire uma foto da árvore plantada. Funciona sem internet — cada registro fica salvo neste telefone e é enviado automaticamente quando houver conexão. Localização (se disponível) e data são registradas automaticamente.",
         speciesLabel: "Espécie da árvore",
@@ -314,6 +324,10 @@
         emailHint: "Your email identifies you to TrueSight DAO. This creates (or reuses) your digital signature on this phone/browser.",
         emailLabel: "Your email",
         emailButton: "Link email",
+        pasteVerifySummary: "Already got the verification email? Paste the link here.",
+        pasteVerifyLabel: "Email verification link",
+        pasteVerifyButton: "Verify pasted link",
+        pasteVerifyInvalid: "Invalid link — I couldn't find vk= and em= in it.",
         treeHeading: "Report a tree planting",
         treeHint: "Take a photo of the planted tree. Works without internet — each report is saved on this phone and sent automatically once there's a connection. Location (if available) and date are recorded automatically.",
         speciesLabel: "Tree species",
@@ -502,12 +516,32 @@
       }
     }
 
-    // Auto-fire EMAIL VERIFICATION EVENT if opened via the emailed link (?vk=&em=)
-    async function checkVerificationLink() {
-      const url = new URL(window.location.href);
-      const vk = url.searchParams.get('vk');
-      const em = url.searchParams.get('em');
-      if (!vk || !em) return;
+    // Auto-fire EMAIL VERIFICATION EVENT if opened via the emailed link (?vk=&em=).
+    // PR14: handles every way the link can arrive inside the app:
+    //   1. Web/browser fallback: ?vk=&em= in window.location.search (unchanged).
+    //   2. Native cold start: sunmint:// deep link via App.getLaunchUrl().
+    //   3. Native warm start: sunmint:// deep link via App 'appUrlOpen' listener.
+    //   4. Manual paste fallback: pasteVerificationLink() (covers https emailed
+    //      links today, since Edgar's email template is unchanged and this app
+    //      is an additional client, not a replacement).
+    function extractVerificationParams(rawUrl) {
+      try {
+        const url = new URL(rawUrl);
+        const vk = url.searchParams.get('vk');
+        const em = url.searchParams.get('em');
+        if (vk && em) return { vk, em };
+      } catch (e) { /* not a URL — try bare query below */ }
+      // Bare query fallback: "vk=...&em=..." pasted without a scheme/host.
+      try {
+        const q = rawUrl.indexOf('?') >= 0 ? rawUrl.slice(rawUrl.indexOf('?') + 1) : rawUrl;
+        const vk = new URLSearchParams(q).get('vk');
+        const em = new URLSearchParams(q).get('em');
+        if (vk && em) return { vk, em };
+      } catch (e) { /* ignore */ }
+      return null;
+    }
+
+    async function submitVerification(vk, em) {
       const statusEl = document.getElementById('status');
       statusEl.textContent = t('emailVerifying');
       statusEl.className = '';
@@ -518,11 +552,54 @@
       } catch (err) {
         statusEl.textContent = t('emailError') + err.message;
         statusEl.className = 'error';
-      } finally {
+      }
+    }
+
+    async function checkVerificationLink() {
+      const params = extractVerificationParams(window.location.href);
+      if (!params) return;
+      await submitVerification(params.vk, params.em);
+      try {
+        const url = new URL(window.location.href);
         url.searchParams.delete('vk');
         url.searchParams.delete('em');
         window.history.replaceState({}, document.title, url.pathname + url.search + url.hash);
+      } catch (e) { /* ignore */ }
+    }
+
+    // Manual fallback: farmer pastes the emailed https link (or bare vk=…&em=…)
+    // into #verifyLinkInput and taps verify. Covers the case where the https
+    // emailed link can't be intercepted natively (no Universal/App Links yet).
+    async function pasteVerificationLink() {
+      const input = document.getElementById('verifyLinkInput');
+      const params = extractVerificationParams(input.value.trim());
+      const statusEl = document.getElementById('status');
+      if (!params) {
+        statusEl.textContent = t('pasteVerifyInvalid');
+        statusEl.className = 'error';
+        return;
       }
+      await submitVerification(params.vk, params.em);
+    }
+
+    // PR14: native deep-link handling for the sunmint:// custom scheme.
+    function wireNativeVerificationLinks() {
+      if (typeof Capacitor === 'undefined' || !Capacitor.Plugins || !Capacitor.Plugins.App) return;
+      const app = Capacitor.Plugins.App;
+      // Cold start: app was launched by the link.
+      app.getLaunchUrl().then((res) => {
+        if (res && res.url) {
+          const params = extractVerificationParams(res.url);
+          if (params) submitVerification(params.vk, params.em);
+        }
+      }).catch(() => {});
+      // Warm start: app already open, link arrives.
+      app.addListener('appUrlOpen', (data) => {
+        if (data && data.url) {
+          const params = extractVerificationParams(data.url);
+          if (params) submitVerification(params.vk, params.em);
+        }
+      });
     }
 
     // ── Section 2: report tree planting (mirrors report_tree_planting.html) ─
@@ -973,6 +1050,7 @@
     setLang(currentLang);
     requestLocation();
     checkVerificationLink();
+    wireNativeVerificationLinks();
     updatePendingBadge();
     flushTreeReportQueue(); // backfill anything queued from a previous offline session
     window.addEventListener('online', flushTreeReportQueue); // web/browser fallback
