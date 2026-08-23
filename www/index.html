@@ -975,7 +975,20 @@
     checkVerificationLink();
     updatePendingBadge();
     flushTreeReportQueue(); // backfill anything queued from a previous offline session
-    window.addEventListener('online', flushTreeReportQueue);
+    window.addEventListener('online', flushTreeReportQueue); // web/browser fallback
+    // PR9: native sync triggers \u2014 same flush function as PR7.
+    // @capacitor/network: flush the queue whenever connectivity is regained.
+    // @capacitor/app: flush when the app returns to the foreground.
+    if (typeof Capacitor !== 'undefined' && Capacitor.Plugins && Capacitor.Plugins.Network) {
+      Capacitor.Plugins.Network.addListener('networkStatusChange', (status) => {
+        if (status && status.connected) flushTreeReportQueue();
+      });
+    }
+    if (typeof Capacitor !== 'undefined' && Capacitor.Plugins && Capacitor.Plugins.App) {
+      Capacitor.Plugins.App.addListener('appStateChange', (state) => {
+        if (state && state.isActive) flushTreeReportQueue();
+      });
+    }
     startTreeCamera(); // ask for camera permission up front so it's ready when needed
   </script>
 </body>
