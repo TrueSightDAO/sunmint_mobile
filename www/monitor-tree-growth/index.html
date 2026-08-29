@@ -75,9 +75,9 @@
       background: #f1f1f1; cursor: pointer; text-align: center; font-weight: bold; font-size: 0.9rem; }
     .photo-tab.active { background: #2e7d32; color: white; border-color: #2e7d32; }
     .photo-tab.done::after { content: ' ✓'; }
-    .photo-panel { border: 1px solid #ccc; border-top: none; border-radius: 0 0 6px 6px; padding: 0.8rem; }
+    .photo-panel { border: 1px solid #ccc; border-top: none; border-radius: 0 0 6px 6px; padding: 0.8rem; text-align: center; }
     .photo-panel[hidden] { display: none; }
-    .camera-viewport { width: 100%; border-radius: 6px; background: #000; min-height: 180px; margin-top: 0.5rem; }
+    .camera-viewport { width: 100%; max-width: 100%; max-height: 30vh; object-fit: cover; height: auto; border-radius: 6px; background: #000; min-height: 140px; margin-top: 0.5rem; }
     .status { margin-top: 0.6rem; font-size: 0.9rem; color: #1b5e20; }
     .status.error { color: #b71c1c; }
     .status.success { color: #1b5e20; }
@@ -87,9 +87,10 @@
     }
     .submission-result h3 { color: #333; }
     .nav-dropdown { margin-bottom: 1rem; text-align: center; }
-    .tree-detail { background: #f8f6f2; border: 1px solid #e5dfd3; border-radius: 8px; padding: 0.75rem; margin: 0.5rem 0 1rem; }
-    .tree-detail-photo { max-width: 100%; max-height: 220px; border-radius: 6px; margin-bottom: 0.5rem; object-fit: cover; }
+    .tree-detail { background: #f8f6f2; border: 1px solid #e5dfd3; border-radius: 8px; padding: 0.75rem; margin: 0.5rem 0 1rem; text-align: center; }
+    .tree-detail-photo { display: block; max-width: 100%; max-height: 220px; border-radius: 6px; margin: 0 auto 0.5rem; object-fit: cover; }
     .tree-detail-meta div { margin: 0.15rem 0; font-size: 0.9rem; }
+    #markInvalidBtn:disabled { background: #9e9e9e !important; color: #f5f5f5 !important; cursor: not-allowed !important; }
     .nav-dropdown select { max-width: 300px; display: inline-block; }
     .lang-toggle {
       display: flex;
@@ -167,11 +168,11 @@
         <div><strong data-i18n="detailStatus">Status:</strong> <span id="treeDetailStatus">—</span></div>
         <div><strong data-i18n="detailQr">QR Code:</strong> <span id="treeDetailQr">—</span></div>
         <div><strong data-i18n="detailMeasure">Measurement:</strong> <span id="treeDetailMeasure">—</span></div>
-        <div id="treeDetailNoPhoto" class="hint" data-i18n="detailNoPhoto" style="display:none;">Sem foto disponível para esta árvore.
-      <div id="invalidZone" style="display:none; margin-top:0.6rem;">
-        <button type="button" id="markInvalidBtn" onclick="markTreeInvalid()" style="background:#b23b3b;color:#fff;border:none;border-radius:6px;padding:0.5rem 0.9rem;font-size:0.9rem;">MARK INVALID</button>
+        <div id="treeDetailNoPhoto" class="hint" data-i18n="detailNoPhoto" style="display:none;">Sem foto disponível para esta árvore.</div>
+        <div id="invalidZone" style="display:none; margin-top:0.6rem;">
+        <button type="button" id="markInvalidBtn" onclick="markTreeInvalid()" style="cursor:pointer;background:#b23b3b;color:#fff;border:none;border-radius:6px;padding:0.5rem 0.9rem;font-size:0.9rem;" data-i18n="markInvalid">Marcar árvore como inválida</button>
         <p id="invalidNote" style="color:#b23b3b;font-size:0.85rem;display:none;"></p>
-      </div></div>
+        </div>
       </div>
     </div>
 
@@ -209,9 +210,15 @@
   <div class="container optional-section">
     <h3 data-i18n="emailHeading">Vincular email (opcional)</h3>
     <p class="hint" data-i18n="emailHint">Seu email é usado para identificá-lo na TrueSight DAO. Isso cria (ou reutiliza) sua assinatura digital neste telefone/navegador.</p>
-    <label for="emailInput" data-i18n="emailLabel">Seu email</label>
-    <input type="email" id="emailInput" placeholder="voce@exemplo.com" autocomplete="email">
-    <button class="submit-btn" id="emailSubmitBtn" onclick="submitEmailLink()" data-i18n="emailButton">Vincular email</button>
+    <div id="emailUnlinked">
+      <label for="emailInput" data-i18n="emailLabel">Seu email</label>
+      <input type="email" id="emailInput" placeholder="voce@exemplo.com" autocomplete="email">
+      <button class="submit-btn" id="emailSubmitBtn" onclick="submitEmailLink()" data-i18n="emailButton">Vincular email</button>
+    </div>
+    <div id="emailLinked" style="display:none;">
+      <p class="hint"><span id="emailLinkedLabel" data-i18n="emailLinkedLabel"></span> <strong id="linkedEmailDisplay"></strong></p>
+      <button class="submit-btn" id="emailUnlinkBtn" onclick="unlinkEmail()" data-i18n="emailUnlinkButton">Desvincular email</button>
+    </div>
     <div id="status" aria-live="polite"></div>
   </div>
 
@@ -259,6 +266,11 @@
         emailHint: 'Seu email é usado para identificá-lo na TrueSight DAO. Isso cria (ou reutiliza) sua assinatura digital neste telefone/navegador.',
         emailLabel: 'Seu email',
         emailButton: 'Vincular email',
+        emailVerified: 'Email confirmado com sucesso!',
+        emailLinkedLabel: 'Email vinculado:',
+        emailUnlinkButton: 'Desvincular email',
+        emailUnlinkConfirm: 'Desvincular este email? Sua assinatura digital neste navegador será removida.',
+        emailUnlinked: 'Email desvinculado. Sua assinatura digital foi removida deste navegador.',
         downloadHeading: 'Baixe o aplicativo Android',
         downloadHint: 'Prefere o aplicativo nativo? Funciona sem internet e salva os registros no seu celular.',
         downloadButton: 'Baixar APK (Android)',
@@ -303,7 +315,8 @@
         invalidSent: 'Marcação de invalidação enviada (Reject Event)',
         invalidError: 'Falha ao enviar rejeição',
         govOnly: 'Somente governadores podem marcar árvores como inválidas',
-        invalidNote: 'Árvore marcada como INVÁLIDA — não pode ser medida'
+        invalidNote: 'Árvore marcada como INVÁLIDA — não pode ser medida',
+        invalidDone: 'Árvore marcada como INVÁLIDA. Selecione outra árvore.'
       },
       en: {
         title: 'Monitor Tree',
@@ -339,6 +352,11 @@
         emailHint: 'Your email identifies you in the TrueSight DAO. This creates (or reuses) your digital signature on this phone/browser.',
         emailLabel: 'Your email',
         emailButton: 'Link email',
+        emailVerified: 'Email confirmed successfully!',
+        emailLinkedLabel: 'Email linked:',
+        emailUnlinkButton: 'Unlink email',
+        emailUnlinkConfirm: 'Unlink this email? Your digital signature on this browser will be removed.',
+        emailUnlinked: 'Email unlinked. Your digital signature was removed from this browser.',
         downloadHeading: 'Download the Android app',
         downloadHint: 'Prefer the native app? Works offline and stores records on your phone.',
         downloadButton: 'Download APK (Android)',
@@ -383,7 +401,8 @@
         invalidSent: 'Invalidation (Reject Event) sent',
         invalidError: 'Failed to send rejection',
         govOnly: 'Only governors can mark trees as invalid',
-        invalidNote: 'Tree marked INVALID — cannot be measured'
+        invalidNote: 'Tree marked INVALID — cannot be measured',
+        invalidDone: 'Tree marked INVALID. Select another tree.'
       }
     };
     const DEFAULT_LANG = (navigator.language || 'pt').toLowerCase().startsWith('pt') ? 'pt' : 'en';
@@ -425,6 +444,7 @@
     let mediaStream = null;
     let activeCaptureMode = null; // 'closeup' | 'context'
     const PENDING_KEY = 'sunmint_monitor_pending';
+    const TREE_INDEX_CACHE_KEY = 'sunmint_tree_index_cache';
 
     // ── crypto helpers (mirrors sunmint_beta) ─────────────────────────
     function arrayBufferToBase64(buffer) {
@@ -479,10 +499,10 @@
     async function checkSignatureRegistration(publicKey) {
       try {
         const encoded = encodeURIComponent(publicKey);
-        const resp = await fetch(`${EDGAR_BASE}/dao/contributors?public_key=${encoded}`);
+        const resp = await fetch(`${EDGAR_BASE}/dao/check_digital_signature?signature=${encoded}`);
         if (!resp.ok) return null;
         const data = await resp.json();
-        if (data && data.contributor_name) { isSignatureRegistered = true; return data; }
+        if (data && data.registered && data.contributor_name) { isSignatureRegistered = true; return data; }
         return null;
       } catch (_) { return null; }
     }
@@ -541,13 +561,14 @@
       } catch (_) { /* non-critical */ }
     }
     async function loadTreeIndex() {
+      // Internet-first: try each remote/relative URL in order.
       for (const url of TREE_INDEX_URLS) {
         try {
           const sep = url.includes('?') ? '&' : '?';
           const resp = await fetch(url + sep + 'cb=' + Date.now(), { cache: 'no-store' });
           if (!resp.ok) continue;
           const geojson = await resp.json();
-          return (geojson.features || []).map(f => {
+          const trees = (geojson.features || []).map(f => {
             const p = f.properties || {};
             const coords = f.geometry && f.geometry.coordinates;
             return {
@@ -561,8 +582,16 @@
               qrCode: p.qr_code || null
             };
           });
+          // Successful internet load — cache for offline fallback.
+          try { localStorage.setItem(TREE_INDEX_CACHE_KEY, JSON.stringify(trees)); } catch (_) {}
+          return trees;
         } catch (_) { /* try next */ }
       }
+      // Offline / all URLs failed — fall back to the last cached index.
+      try {
+        const cached = localStorage.getItem(TREE_INDEX_CACHE_KEY);
+        if (cached) return JSON.parse(cached);
+      } catch (_) {}
       return null;
     }
     function populateTreeDropdown(trees) {
@@ -621,19 +650,20 @@
       const ready = !!(closeupBlob && contextBlob);
       btn.disabled = !ready;
     }
-    function showPhotoSection() {
+    function showPhotoSection(startCameraNow) {
       document.getElementById('photoSection').style.display = 'block';
-      // Do NOT auto-start the camera here: on deep links (?tree=<id>) this runs
-      // during page load, outside a user gesture, and browsers reject
-      // getUserMedia (NotAllowedError), leaving a black camera-viewport.
-      // The camera starts on the first real interaction (tab click or button).
-      switchTab('closeup', false);
+      // Auto-start the camera ONLY on a real user gesture (dropdown pick or
+      // manual tree-ID typing). On deep links (?tree=<id>) this runs during
+      // page load, outside a gesture — browsers reject getUserMedia
+      // (NotAllowedError), leaving a black camera-viewport — so those callers
+      // pass false and the camera starts on the first real interaction.
+      switchTab('closeup', startCameraNow !== false);
     }
     function hidePhotoSection() {
       stopCamera();
       document.getElementById('photoSection').style.display = 'none';
     }
-    function onTreeSelectChange() {
+    function onTreeSelectChange(isDeepLinkInit) {
       const select = document.getElementById('treeSelect');
       const manual = document.getElementById('treeIdManual');
       const panel = document.getElementById('treeDetailPanel');
@@ -647,7 +677,10 @@
         renderTreeDetail(select.value);
         setTreeParam(select.value);
         resetCaptures();
-        showPhotoSection();
+        // User-gesture path (dropdown pick) starts the camera immediately;
+        // deep-link page-load init (isDeepLinkInit=true) stays deferred.
+        showPhotoSection(!isDeepLinkInit);
+        document.getElementById('markInvalidBtn').disabled = false;
         maybeShowInvalidZone();
       }
     }
@@ -812,9 +845,35 @@
       try { return JSON.parse(localStorage.getItem(PENDING_KEY) || '[]'); } catch (_) { return []; }
     }
     function savePending(list) { localStorage.setItem(PENDING_KEY, JSON.stringify(list)); }
+    function blobToDataURL(blob) {
+      return new Promise((resolve, reject) => {
+        if (!blob || typeof blob.arrayBuffer !== 'function') return resolve(null);
+        blob.arrayBuffer().then(buf => {
+          const bytes = new Uint8Array(buf);
+          let bin = '';
+          for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+          resolve('data:image/jpeg;base64,' + btoa(bin));
+        }).catch(reject);
+      });
+    }
+    function dataURLToBlob(dataUrl) {
+      if (!dataUrl || typeof dataUrl !== 'string' || !dataUrl.startsWith('data:')) return null;
+      const meta = dataUrl.split(',')[0];
+      const mime = (meta.match(/data:([^;]+)/) || [])[1] || 'image/jpeg';
+      const bin = atob(dataUrl.split(',')[1]);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      return new Blob([bytes], { type: mime });
+    }
     async function queueMonitoring(record) {
       const list = getPending();
-      list.push(record);
+      list.push({
+        id: record.id,
+        shareText: record.shareText,
+        createdAt: record.createdAt,
+        closeupDataUrl: await blobToDataURL(record.closeupBlob),
+        contextDataUrl: await blobToDataURL(record.contextBlob)
+      });
       savePending(list);
       await updatePendingBadge();
     }
@@ -835,10 +894,12 @@
       const remaining = [];
       for (const record of list) {
         try {
+          const closeupBlob = dataURLToBlob(record.closeupDataUrl || record.closeupBlob);
+          const contextBlob = dataURLToBlob(record.contextDataUrl || record.contextBlob);
           const formData = new FormData();
           formData.append('text', record.shareText);
-          if (record.closeupBlob) formData.append('attachment', record.closeupBlob, 'closeup.jpg');
-          if (record.contextBlob) formData.append('attachment', record.contextBlob, 'context.jpg');
+          if (closeupBlob) formData.append('attachment', closeupBlob, 'closeup.jpg');
+          if (contextBlob) formData.append('attachment', contextBlob, 'context.jpg');
           const resp = await fetch(EDGAR_SUBMIT_URL, { method: 'POST', body: formData });
           if (!resp.ok) throw new Error(await resp.text());
         } catch (_) {
@@ -855,7 +916,7 @@
       const lines = Object.entries(attributes).map(([k, v]) => `- ${k}: ${v}`).join('\n');
       const requestText = `[${eventName}]\n${lines}\n--------`;
       const signature = await signText(privateKey, requestText);
-      const shareText = `${requestText}\n\nMy Digital Signature: ${publicKey}\n\nRequest Transaction ID: ${signature}`;
+      const shareText = `${requestText}\n\nMy Digital Signature: ${publicKey}\n\nRequest Transaction ID: ${signature}\n\nThis submission was generated using ${window.location.origin + window.location.pathname}\n\nVerify submission here: https://dapp.truesight.me/verify_request.html`;
       const formData = new FormData();
       formData.append('text', shareText);
       const resp = await fetch(EDGAR_SUBMIT_URL, { method: 'POST', body: formData });
@@ -881,6 +942,29 @@
         btn.disabled = false;
       }
     }
+    function getLinkedEmail() {
+      return localStorage.getItem('sunmint_linked_email') || '';
+    }
+
+    function renderEmailSection() {
+      const linked = getLinkedEmail();
+      document.getElementById('emailUnlinked').style.display = linked ? 'none' : '';
+      document.getElementById('emailLinked').style.display = linked ? '' : 'none';
+      document.getElementById('linkedEmailDisplay').textContent = linked;
+      document.getElementById('emailLinkedLabel').textContent = t('emailLinkedLabel');
+    }
+
+    function unlinkEmail() {
+      if (!confirm(t('emailUnlinkConfirm'))) return;
+      localStorage.removeItem('publicKey');
+      localStorage.removeItem('privateKey');
+      localStorage.removeItem('sunmint_linked_email');
+      const statusEl = document.getElementById('status');
+      statusEl.textContent = t('emailUnlinked');
+      statusEl.className = 'success';
+      renderEmailSection();
+    }
+
     async function checkVerificationLink() {
       const url = new URL(window.location.href);
       const vk = url.searchParams.get('vk');
@@ -892,13 +976,19 @@
         const { publicKey, privateKey } = await ensureKeyPair();
         const requestText = `[EMAIL VERIFICATION EVENT]\n- Email: ${em}\n- Verification Key: ${vk}\n- Submission Source: ${window.location.href}\n--------`;
         const signature = await signText(privateKey, requestText);
-        const shareText = `${requestText}\n\nMy Digital Signature: ${publicKey}\n\nRequest Transaction ID: ${signature}`;
+        const shareText = `${requestText}\n\nMy Digital Signature: ${publicKey}\n\nRequest Transaction ID: ${signature}\n\nThis submission was generated using ${window.location.origin + window.location.pathname}\n\nVerify submission here: https://dapp.truesight.me/verify_request.html`;
         const formData = new FormData();
         formData.append('text', shareText);
         const resp = await fetch(EDGAR_SUBMIT_URL, { method: 'POST', body: formData });
         if (!resp.ok) throw new Error(await resp.text());
-        statusEl.textContent = t('emailSent');
+        statusEl.textContent = t('emailVerified');
         statusEl.className = 'success';
+        localStorage.setItem('sunmint_linked_email', em);
+        renderEmailSection();
+        const urlClean = new URL(window.location.href);
+        urlClean.searchParams.delete('vk');
+        urlClean.searchParams.delete('em');
+        window.history.replaceState({}, document.title, urlClean.pathname + urlClean.search + urlClean.hash);
       } catch (err) {
         statusEl.textContent = t('emailError') + err.message;
         statusEl.className = 'error';
@@ -928,23 +1018,29 @@
     }
 
 
-    // ----- governor gate (mirror of the GAS 'Governors' tab; keep in sync) -----
-    const GOVERNORS = ['Gary Teh','Jacob Nelan','Elizabeth Wong','Kirsten Ritschel','Shena Davenport','AGL15','Fatima Toledo','Kaon Krasniqi','Andreas Quandt','Claude'];
+    // ----- governor/sentinel gate (server-authoritative flags from /dao/check_digital_signature) -----
     let currentContributorName = null;
+    let currentContributorIsGovernor = false;
+    let currentContributorIsSentinel = false;
     async function loadContributorIdentity() {
       const pk = localStorage.getItem('publicKey');
       if (!pk) return null;
       try {
         const encoded = encodeURIComponent(pk);
-        const resp = await fetch(`${EDGAR_BASE}/dao/contributors?public_key=${encoded}`);
+        const resp = await fetch(`${EDGAR_BASE}/dao/check_digital_signature?signature=${encoded}`);
         if (!resp.ok) return null;
         const data = await resp.json();
-        if (data && data.contributor_name) { currentContributorName = data.contributor_name; return data; }
+        if (data && data.registered && data.contributor_name) {
+          currentContributorName = data.contributor_name;
+          currentContributorIsGovernor = !!data.is_governor;
+          currentContributorIsSentinel = !!data.is_sentinel;
+          return data;
+        }
       } catch (_) {}
       return null;
     }
     function isCurrentUserGovernor() {
-      return currentContributorName && GOVERNORS.includes(currentContributorName);
+      return !!currentContributorName && (currentContributorIsGovernor || currentContributorIsSentinel);
     }
     function maybeShowInvalidZone() {
       const zone = document.getElementById('invalidZone');
@@ -955,14 +1051,12 @@
       if (!treeId) return;
       if (!isCurrentUserGovernor()) { document.getElementById('treeStatus').textContent = t('govOnly'); document.getElementById('treeStatus').className = 'error'; return; }
       if (!confirm(t('markInvalidConfirm'))) return;
+      document.getElementById('markInvalidBtn').disabled = true;
       const statusEl = document.getElementById('treeStatus');
       statusEl.className = '';
       statusEl.textContent = t('invalidSent');
       try {
         const { publicKey, privateKey } = await ensureKeyPair();
-        const now = new Date();
-        const pad = (n) => n.toString().padStart(2, '0');
-        const yyyymmddhhmmss = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
         // The GAS handler matches the SunMint row by Telegram Message ID (col D).
         // Best available stable key from the client: the tree's QR code / tree id.
         const key = (treeIndex || []).find(t => t.id === treeId || t.qrCode === treeId);
@@ -971,10 +1065,26 @@
         const requestText = `[TREE PLANTING REJECT EVENT]\n- QR Code: ${qrCode}\n- SunMint Submission Message ID: ${treeId}\n- Updated by: ${currentContributorName || 'unknown'}\n- Reason: ${reason}\n--------`;
         const signature = await signText(privateKey, requestText);
         const shareText = `${requestText}\n\nMy Digital Signature: ${publicKey}\n\nRequest Transaction ID: ${signature}\n\nThis submission was generated using ${window.location.href}\n\nVerify submission here: https://dapp.truesight.me/verify_request.html`;
-        const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(shareText)}`;
-        const ok = await navigator.share ? (() => { try { navigator.share({ text: shareText }); return true; } catch (_) { return false; } })() : false;
-        if (!ok) { prompt(t('invalidSent'), shareText); }
+        await queueMonitoring({
+          id: 'reject-' + treeId + '-' + Date.now(),
+          shareText,
+          createdAt: new Date().toISOString()
+        });
+        await updatePendingBadge();
+        statusEl.textContent = t('invalidDone');
+        statusEl.className = 'success';
+        treeIndex = (treeIndex || []).filter(t => t.id !== treeId && t.qrCode !== treeId);
+        try { localStorage.setItem(TREE_INDEX_CACHE_KEY, JSON.stringify(treeIndex)); } catch (_) {}
+        populateTreeDropdown(treeIndex);
+        const select = document.getElementById('treeSelect');
+        select.value = '';
+        document.getElementById('treeDetailPanel').style.display = 'none';
+        document.getElementById('treeIdManual').style.display = 'block';
+        hidePhotoSection();
+        setTreeParam('');
+        flushQueue();
       } catch (e) {
+        document.getElementById('markInvalidBtn').disabled = false;
         statusEl.textContent = t('invalidError') + ': ' + e.message;
         statusEl.className = 'error';
       }
@@ -1051,11 +1161,14 @@
     function onNavChange() {
       const select = document.getElementById('pageNav');
       if (select.value === 'plant') {
-        window.location.href = '/index.html';
+        window.location.href = '/';
       } else {
-        window.location.href = '/monitor-tree-growth/index.html';
+        window.location.href = '/monitor-tree-growth/';
       }
     }
+
+    // ── auto-flush queued submissions when connectivity returns ───────
+    window.addEventListener('online', flushQueue);
 
     // ── init ──────────────────────────────────────────────────────────
     window.onload = async function () {
@@ -1068,7 +1181,9 @@
 
       requestLocation();
       checkVerificationLink();
+      renderEmailSection();
       updatePendingBadge();
+      flushQueue();
 
       statusEl.textContent = t('treeLoading');
       treeIndex = await loadTreeIndex();
@@ -1079,10 +1194,17 @@
         document.getElementById('treeSelect').innerHTML = '<option value="">' + t('treeManual') + '</option>';
         document.getElementById('treeIdManual').style.display = 'block';
       }
-      document.getElementById('treeSelect').addEventListener('change', onTreeSelectChange);
+      document.getElementById('treeSelect').addEventListener('change', function () { onTreeSelectChange(false); });
       document.getElementById('treeIdManual').addEventListener('input', function () {
         setTreeParam(this.value.trim());
-        if (this.value.trim()) showPhotoSection(); else hidePhotoSection();
+        if (this.value.trim()) {
+          showPhotoSection(true); // user typing — real gesture, start camera now
+          maybeShowInvalidZone();
+        } else {
+          hidePhotoSection();
+          const zone = document.getElementById('invalidZone');
+          if (zone) zone.style.display = 'none';
+        }
       });
       // Deep link: restore selected tree from ?tree=<id>
       const urlTree = new URLSearchParams(window.location.search).get('tree');
@@ -1091,7 +1213,7 @@
         const select = document.getElementById('treeSelect');
         if (match && select.querySelector('option[value="' + CSS.escape(match.id) + '"]')) {
           select.value = match.id;
-          onTreeSelectChange();
+          onTreeSelectChange(true); // deep-link init — defer camera start
           maybeShowInvalidZone();
         } else {
           document.getElementById('treeIdManual').value = urlTree;
@@ -1099,7 +1221,8 @@
           document.getElementById('treeDetailPanel').style.display = 'none';
           setTreeParam(urlTree);
           // show the capture UI even when the tree id isn't in the local index
-          showPhotoSection();
+          showPhotoSection(false); // deep-link init — defer camera start
+          maybeShowInvalidZone();
         }
       }
       statusEl.textContent = '';
@@ -1110,7 +1233,7 @@
   <div class="container optional-section" style="text-align:center;">
     <h3 data-i18n="downloadHeading">Baixe o aplicativo Android</h3>
     <p class="hint" data-i18n="downloadHint">Prefere o aplicativo nativo? Funciona sem internet e salva os registros no seu celular.</p>
-    <a class="download-btn" href="https://github.com/TrueSightDAO/sunmint_mobile/releases/download/v0.1.0-android-uat/sunmint-android-uat.apk" data-i18n="downloadButton">Baixar APK (Android)</a>
+    <a class="download-btn" href="https://github.com/TrueSightDAO/sunmint_mobile/releases/download/v0.2.0-android/sunmint-android.apk" data-i18n="downloadButton">Baixar APK (Android)</a>
   </div>
 </body>
 </html>
