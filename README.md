@@ -2,7 +2,9 @@
 
 SunMint farmer app — native Android/iOS via Capacitor 8 — tree-planting reports with geolocation + tree photos, offline-first queue, email linking, RSA-signed submissions to the TrueSight DAO ledger.
 
-**Relationship to web apps:** `sunmint_beta` (dev) / `sunmint_prod` (prod) host the same web app; this repo is the native wrapper. The web layer lives in `www/index.html` (a byte-identical copy of the web app) and the native shells are `android/` and `ios/`.
+**Relationship to web apps:** `sunmint_beta` (dev) / `sunmint_prod` (prod) host the same web app; this repo is the native wrapper. The web layer lives in `www/` (a **Capacitor-adapted** copy of the web app — it diverges from `sunmint_beta` where native plugins replace web APIs per the plan's PR4–PR7) and the native shells are `android/` and `ios/`.
+
+**Offline note:** the web site's `service-worker.js` does **not** apply to the mobile app. The app's pages ship inside the native bundle (`webDir: www`), so they are always available offline with no service worker; the offline-first submission queue is handled natively by SQLite + Filesystem (IndexedDB fallback only on web).
 
 ---
 
@@ -58,7 +60,7 @@ See `sunmint_beta/README.md` testing notes (online submit, offline submit + reco
 
 ## Repo layout
 ```
-www/index.html          # web app (byte-identical to sunmint_beta)
+www/                    # web app (Capacitor-adapted; diverges from sunmint_beta where native plugins replace web APIs)
 android/                # native Android project (Capacitor)
 ios/                    # native iOS project (Capacitor)
 scripts/rsa-compat-test/ # RSA byte-compatibility proof (Java ↔ Node crypto.subtle)
