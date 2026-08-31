@@ -77,7 +77,7 @@
     .photo-tab.done::after { content: ' ✓'; }
     .photo-panel { border: 1px solid #ccc; border-top: none; border-radius: 0 0 6px 6px; padding: 0.8rem; text-align: center; }
     .photo-panel[hidden] { display: none; }
-    .camera-viewport { width: 100%; max-width: 100%; max-height: 30vh; object-fit: cover; height: auto; border-radius: 6px; background: #000; min-height: 140px; margin-top: 0.5rem; }
+    .camera-viewport { width: 100%; max-width: 100%; height: auto; object-fit: cover; border-radius: 6px; background: #000; margin-top: 0.5rem; }
     .status { margin-top: 0.6rem; font-size: 0.9rem; color: #1b5e20; }
     .status.error { color: #b71c1c; }
     .status.success { color: #1b5e20; }
@@ -158,7 +158,6 @@
     <select id="treeSelect">
       <option value="" data-i18n="treeLoading">Carregando árvores próximas...</option>
     </select>
-    <input type="text" id="treeIdManual" style="display:none; margin-top:0.5rem;" placeholder="Tree ID manual (ex: FOUNDERHAUS_BOUGAINVILLEA_20260821_1)" data-i18n-placeholder="treeIdManualPlaceholder">
 
     <div id="treeDetailPanel" class="tree-detail" style="display:none;">
       <img id="treeDetailPhoto" class="tree-detail-photo" alt="" style="display:none;">
@@ -186,7 +185,7 @@
       <button type="button" class="photo-tab" id="tab-context" onclick="switchTab('context')" data-i18n="contextTab">Contexto</button>
     </div>
     <div class="photo-panel" id="panel-closeup">
-      <p class="hint" data-i18n="closeupHint">Segure o cartão de calibração contra o tronco, enquadre e tire a foto.</p>
+      <p class="hint" data-i18n="closeupHint">Segure o cartão de calibração (85,6 × 54 mm — tamanho de cartão de crédito) contra o tronco, enquadre e tire a foto.</p>
       <video id="closeupVideo" class="camera-viewport" autoplay playsinline muted style="display:none;"></video>
       <img id="closeupPreview" class="photo-preview" style="display:none;">
       <button type="button" class="camera-btn" id="closeupBtn" onclick="capturePhoto('closeup')" data-i18n="closeupButton">Tirar foto</button>
@@ -212,7 +211,7 @@
     <p class="hint" data-i18n="emailHint">Seu email é usado para identificá-lo na TrueSight DAO. Isso cria (ou reutiliza) sua assinatura digital neste telefone/navegador.</p>
     <div id="emailUnlinked">
       <label for="emailInput" data-i18n="emailLabel">Seu email</label>
-      <input type="email" id="emailInput" placeholder="voce@exemplo.com" autocomplete="email">
+      <input type="email" id="emailInput" placeholder="voce@exemplo.com" autocomplete="email" onkeydown="if(event.key==='Enter'){event.preventDefault();submitEmailLink();}">
       <button class="submit-btn" id="emailSubmitBtn" onclick="submitEmailLink()" data-i18n="emailButton">Vincular email</button>
     </div>
     <div id="emailLinked" style="display:none;">
@@ -242,12 +241,11 @@
         monitorHint: 'Selecione a árvore, tire a foto de perto com o cartão de calibração contra o tronco (1,3 m de altura) e uma foto de contexto da árvore inteira.',
         treeLabel: 'Árvore próxima',
         treeLoading: 'Carregando árvores próximas...',
-        treeIdManualPlaceholder: 'Tree ID manual (ex: FOUNDERHAUS_BOUGAINVILLEA_20260821_1)',
         dbhLabel: 'DAP (cm) — diâmetro à altura do peito (1,3 m)',
         dbhHint: 'Segure o cartão de calibração contra o tronco, dentro do quadro.',
         closeupTab: 'Foto de perto',
         contextTab: 'Contexto',
-        closeupHint: 'Segure o cartão de calibração contra o tronco, enquadre e tire a foto.',
+        closeupHint: 'Segure o cartão de calibração (85,6 × 54 mm — tamanho de cartão de crédito) contra o tronco, enquadre e tire a foto.',
         contextHint: 'Enquadre a árvore inteira e tire a foto de contexto.',
         closeupLabel: 'Foto de perto (cartão + tronco)',
         closeupButton: 'Tirar foto de perto',
@@ -328,12 +326,11 @@
         monitorHint: 'Select the tree, take a close-up photo with the calibration card against the trunk (1.3 m height), and a context photo of the whole tree.',
         treeLabel: 'Nearby tree',
         treeLoading: 'Loading nearby trees...',
-        treeIdManualPlaceholder: 'Manual Tree ID (e.g. FOUNDERHAUS_BOUGAINVILLEA_20260821_1)',
         dbhLabel: 'DBH (cm) — diameter at breast height (1.3 m)',
         dbhHint: 'Hold the calibration card against the trunk, in frame.',
         closeupTab: 'Close-up',
         contextTab: 'Context',
-        closeupHint: 'Hold the calibration card against the trunk, frame it, and take the photo.',
+        closeupHint: 'Hold the calibration card (85.6 × 54 mm — credit-card size) against the trunk, frame it, and take the photo.',
         contextHint: 'Frame the whole tree and take the context photo.',
         closeupLabel: 'Close-up photo (card + trunk)',
         closeupButton: 'Take close-up photo',
@@ -596,10 +593,8 @@
     }
     function populateTreeDropdown(trees) {
       const select = document.getElementById('treeSelect');
-      const manual = document.getElementById('treeIdManual');
       if (!trees || trees.length === 0) {
         select.innerHTML = '<option value="">' + t('treeNotFound') + '</option>';
-        manual.style.display = 'block';
         return;
       }
       const sorted = trees.slice().sort((a, b) => (a._dist ?? Infinity) - (b._dist ?? Infinity));
@@ -665,15 +660,12 @@
     }
     function onTreeSelectChange(isDeepLinkInit) {
       const select = document.getElementById('treeSelect');
-      const manual = document.getElementById('treeIdManual');
       const panel = document.getElementById('treeDetailPanel');
       if (select.value === '') {
-        manual.style.display = 'block';
         panel.style.display = 'none';
         setTreeParam('');
         hidePhotoSection();
       } else {
-        manual.style.display = 'none';
         renderTreeDetail(select.value);
         setTreeParam(select.value);
         resetCaptures();
@@ -999,7 +991,7 @@
     function getSelectedTree() {
       const select = document.getElementById('treeSelect');
       if (select.value) return select.value;
-      return document.getElementById('treeIdManual').value.trim();
+      return '';
     }
 
     // ----- proximity gate (200 m) -----
@@ -1060,7 +1052,11 @@
         // The GAS handler matches the SunMint row by Telegram Message ID (col D).
         // Best available stable key from the client: the tree's QR code / tree id.
         const key = (treeIndex || []).find(t => t.id === treeId || t.qrCode === treeId);
-        const qrCode = (key && key.qrCode) || treeId;
+        // NEVER fabricate a QR code: if this tree has no linked QR (qr_code absent from the
+        // geojson index), emit an explicit "(unlinked)" marker instead of substituting the
+        // tree id. The GAS handler matches reject rows by QR code / SunMint message id and
+        // would otherwise log "QR code not found" and silently no-op the invalidation.
+        const qrCode = (key && key.qrCode) || '(unlinked)';
         const reason = t('invalidReason');
         const requestText = `[TREE PLANTING REJECT EVENT]\n- QR Code: ${qrCode}\n- SunMint Submission Message ID: ${treeId}\n- Updated by: ${currentContributorName || 'unknown'}\n- Reason: ${reason}\n--------`;
         const signature = await signText(privateKey, requestText);
@@ -1079,7 +1075,6 @@
         const select = document.getElementById('treeSelect');
         select.value = '';
         document.getElementById('treeDetailPanel').style.display = 'none';
-        document.getElementById('treeIdManual').style.display = 'block';
         hidePhotoSection();
         setTreeParam('');
         flushQueue();
@@ -1191,21 +1186,9 @@
         populateTreeDropdown(treeIndex);
         refreshTreeDistances();
       } else {
-        document.getElementById('treeSelect').innerHTML = '<option value="">' + t('treeManual') + '</option>';
-        document.getElementById('treeIdManual').style.display = 'block';
+        document.getElementById('treeSelect').innerHTML = '<option value="">' + t('treeNotFound') + '</option>';
       }
       document.getElementById('treeSelect').addEventListener('change', function () { onTreeSelectChange(false); });
-      document.getElementById('treeIdManual').addEventListener('input', function () {
-        setTreeParam(this.value.trim());
-        if (this.value.trim()) {
-          showPhotoSection(true); // user typing — real gesture, start camera now
-          maybeShowInvalidZone();
-        } else {
-          hidePhotoSection();
-          const zone = document.getElementById('invalidZone');
-          if (zone) zone.style.display = 'none';
-        }
-      });
       // Deep link: restore selected tree from ?tree=<id>
       const urlTree = new URLSearchParams(window.location.search).get('tree');
       if (urlTree && treeIndex) {
@@ -1216,13 +1199,10 @@
           onTreeSelectChange(true); // deep-link init — defer camera start
           maybeShowInvalidZone();
         } else {
-          document.getElementById('treeIdManual').value = urlTree;
-          document.getElementById('treeIdManual').style.display = 'block';
+          // Unknown tree id — only signed & planted trees can be monitored.
           document.getElementById('treeDetailPanel').style.display = 'none';
-          setTreeParam(urlTree);
-          // show the capture UI even when the tree id isn't in the local index
-          showPhotoSection(false); // deep-link init — defer camera start
-          maybeShowInvalidZone();
+          setTreeParam('');
+          hidePhotoSection();
         }
       }
       statusEl.textContent = '';
@@ -1230,10 +1210,27 @@
   </script>
 
   <!-- Android app download (footer CTA) -->
-  <div class="container optional-section" style="text-align:center;">
+  <div id="downloadCta" class="container optional-section" style="text-align:center;">
     <h3 data-i18n="downloadHeading">Baixe o aplicativo Android</h3>
     <p class="hint" data-i18n="downloadHint">Prefere o aplicativo nativo? Funciona sem internet e salva os registros no seu celular.</p>
-    <a class="download-btn" href="https://github.com/TrueSightDAO/sunmint_mobile/releases/download/v0.3.0-android/sunmint-android.apk" data-i18n="downloadButton">Baixar APK (Android)</a>
+    <a class="download-btn" href="https://sunmint.truesight.me/sunmint-android.apk" data-i18n="downloadButton">Baixar APK (Android)</a>
   </div>
+
+  <script>
+    // Hide the web-only "Download the Android app" CTA inside the native app (we ARE the app).
+    if (typeof Capacitor !== 'undefined' && Capacitor.getPlatform && Capacitor.getPlatform() !== 'web') {
+      const cta = document.getElementById('downloadCta');
+      if (cta) cta.style.display = 'none';
+    }
+  </script>
+
+  <!-- Offline support: network-first service worker (fresh by default, cached fallback offline) -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
+        .then(reg => console.log('Sunmint Service Worker registered:', reg.scope))
+        .catch(err => console.warn('Sunmint Service Worker registration failed:', err));
+    }
+  </script>
 </body>
 </html>
