@@ -80,6 +80,19 @@
       gap: 0.5rem;
       margin-bottom: 1rem;
     }
+    .nav-dropdown {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+    .nav-dropdown select {
+      max-width: 300px;
+      display: inline-block;
+    }
+    .nav-dropdown label {
+      font-weight: bold;
+      margin-right: 0.4rem;
+      display: inline;
+    }
     .lang-toggle button {
       background: none;
       border: 1px solid #ccc;
@@ -137,15 +150,32 @@
       background-color: #9e9e9e;
       cursor: not-allowed;
     }
+    a.download-btn {
+      display: inline-block;
+      margin-top: 0.8rem;
+      padding: 0.8rem 1.4rem;
+      font-size: 1.05rem;
+      font-weight: bold;
+      color: white;
+      background-color: #e08232;
+      border-radius: 6px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    a.download-btn:hover {
+      background-color: #c97020;
+    }
     #treeCameraPreview, #treePhotoPreview {
       width: 100%;
       max-width: 100%;
-      max-height: 40vh;
-      object-fit: cover;
       height: auto;
+      min-height: 140px;
+      object-fit: cover;
       border-radius: 6px;
       margin-top: 0.4rem;
       background-color: #eee;
+    }
+    #treePhotoPreview {
       display: none;
     }
     .camera-row {
@@ -224,19 +254,20 @@
       <option value="plant" data-i18n="navPlant" selected>Registrar Plantio</option>
       <option value="monitor" data-i18n="navMonitor">Monitorar Árvore</option>
     </select>
+
   </div>
 
-  <div class="container" style="text-align:center;">
-    <img height="120px" src="https://github.com/TrueSightDAO/.github/blob/main/assets/20240612_truesight_dao_logo_square.png?raw=true" alt="TrueSight DAO Logo"/>
-    <h1>Sunmint</h1>
-    <p class="intro" data-i18n="intro">Aplicativo simplificado para agricultores da TrueSight DAO. Vincule seu email e registre o plantio de árvores em poucos passos.</p>
-  </div>
-
-  <!-- Section 1 (primary action): Report tree planting. Doesn't require
-       linking an email first — a keypair is generated on demand and every
-       report is signed with it regardless of email status. Leads the page
-       since this is the actual reason a farmer opens the app in the field. -->
   <div class="container">
+    <div style="text-align:center;">
+      <img height="120px" src="https://github.com/TrueSightDAO/.github/blob/main/assets/20240612_truesight_dao_logo_square.png?raw=true" alt="TrueSight DAO Logo"/>
+      <h1>Sunmint</h1>
+    </div>
+    <p class="intro" data-i18n="intro">Aplicativo simplificado para agricultores da TrueSight DAO. Vincule seu email e registre o plantio de árvores em poucos passos.</p>
+
+    <!-- Section 1 (primary action): Report tree planting. Doesn't require
+         linking an email first — a keypair is generated on demand and every
+         report is signed with it regardless of email status. Leads the page
+         since this is the actual reason a farmer opens the app in the field. -->
     <h2 data-i18n="treeHeading">Registrar plantio de árvore</h2>
     <p class="hint" data-i18n="treeHint">Envie uma foto da árvore plantada. Localização (se disponível) e data são registradas automaticamente.</p>
 
@@ -271,9 +302,15 @@
   <div class="container optional-section">
     <h3 data-i18n="emailHeading">Vincular email (opcional)</h3>
     <p class="hint" data-i18n="emailHint">Seu email é usado para identificá-lo na TrueSight DAO. Isso cria (ou reutiliza) sua assinatura digital neste telefone/navegador.</p>
-    <label for="emailInput" data-i18n="emailLabel">Seu email</label>
-    <input type="email" id="emailInput" placeholder="voce@exemplo.com" autocomplete="email">
-    <button class="submit-btn" id="emailSubmitBtn" onclick="submitEmailLink()" data-i18n="emailButton">Vincular email</button>
+    <div id="emailUnlinked">
+      <label for="emailInput" data-i18n="emailLabel">Seu email</label>
+      <input type="email" id="emailInput" placeholder="voce@exemplo.com" autocomplete="email" onkeydown="if(event.key==='Enter'){event.preventDefault();submitEmailLink();}">
+      <button class="submit-btn" id="emailSubmitBtn" onclick="submitEmailLink()" data-i18n="emailButton">Vincular email</button>
+    </div>
+    <div id="emailLinked" style="display:none;">
+      <p class="hint"><span data-i18n="emailLinkedLabel"></span> <strong id="linkedEmailDisplay"></strong></p>
+      <button class="submit-btn" id="emailUnlinkBtn" onclick="unlinkEmail()" data-i18n="emailUnlinkButton">Desvincular email</button>
+    </div>
     <details id="pasteVerifySection" style="margin-top:10px;">
       <summary class="hint" data-i18n="pasteVerifySummary">Já recebeu o email de verificação? Cole o link aqui.</summary>
       <label for="verifyLinkInput" data-i18n="pasteVerifyLabel">Link de verificação do email</label>
@@ -290,6 +327,13 @@
     <pre id="responsePre"></pre>
   </div>
 
+  <!-- Android app download (footer CTA) -->
+  <div id="downloadCta" class="container optional-section" style="text-align:center;">
+    <h3 data-i18n="downloadHeading">Baixe o aplicativo Android</h3>
+    <p class="hint" data-i18n="downloadHint">Prefere o aplicativo nativo? Funciona sem internet e salva os registros no seu celular.</p>
+    <a class="download-btn" href="https://sunmint.truesight.me/sunmint-android.apk" data-i18n="downloadButton">Baixar APK (Android)</a>
+  </div>
+
   <script>
     // ── i18n ─────────────────────────────────────────────────────────────
     const I18N = {
@@ -298,6 +342,9 @@
         navLabel: "Página:",
         navPlant: "Registrar Plantio",
         navMonitor: "Monitorar Árvore",
+        downloadHeading: "Baixe o aplicativo Android",
+        downloadHint: "Prefere o aplicativo nativo? Funciona sem internet e salva os registros no seu celular.",
+        downloadButton: "Baixar APK (Android)",
         emailHeading: "Vincular email (opcional)",
         emailHint: "Seu email é usado para identificá-lo na TrueSight DAO. Isso cria (ou reutiliza) sua assinatura digital neste telefone/navegador.",
         emailLabel: "Seu email",
@@ -306,6 +353,10 @@
         pasteVerifyLabel: "Link de verificação do email",
         pasteVerifyButton: "Verificar link colado",
         pasteVerifyInvalid: "Link inválido — não encontrei vk= e em= no link.",
+        emailLinkedLabel: "Email vinculado:",
+        emailUnlinkButton: "Desvincular email",
+        emailUnlinkConfirm: "Desvincular este email? Sua assinatura digital neste navegador será removida.",
+        emailUnlinked: "Email desvinculado. Sua assinatura digital foi removida deste navegador.",
         treeHeading: "Registrar plantio de árvore",
         treeHint: "Tire uma foto da árvore plantada. Funciona sem internet — cada registro fica salvo neste telefone e é enviado automaticamente quando houver conexão. Localização (se disponível) e data são registradas automaticamente.",
         speciesLabel: "Espécie da árvore",
@@ -347,6 +398,9 @@
         navLabel: "Page:",
         navPlant: "Plant Tree",
         navMonitor: "Monitor Tree",
+        downloadHeading: "Download the Android app",
+        downloadHint: "Prefer the native app? It works offline and saves your reports on your phone.",
+        downloadButton: "Download APK (Android)",
         emailHeading: "Link email (optional)",
         emailHint: "Your email identifies you to TrueSight DAO. This creates (or reuses) your digital signature on this phone/browser.",
         emailLabel: "Your email",
@@ -355,6 +409,10 @@
         pasteVerifyLabel: "Email verification link",
         pasteVerifyButton: "Verify pasted link",
         pasteVerifyInvalid: "Invalid link — I couldn't find vk= and em= in it.",
+        emailLinkedLabel: "Email linked:",
+        emailUnlinkButton: "Unlink email",
+        emailUnlinkConfirm: "Unlink this email? Your digital signature on this browser will be removed.",
+        emailUnlinked: "Email unlinked. Your digital signature was removed from this browser.",
         treeHeading: "Report a tree planting",
         treeHint: "Take a photo of the planted tree. Works without internet — each report is saved on this phone and sent automatically once there's a connection. Location (if available) and date are recorded automatically.",
         speciesLabel: "Tree species",
@@ -456,6 +514,16 @@
       localStorage.setItem(key, value);
     }
 
+    async function secureStorageRemove(key) {
+      try {
+        if (typeof Capacitor !== 'undefined' && Capacitor.Plugins && Capacitor.Plugins.SecureStorage) {
+          await Capacitor.Plugins.SecureStorage.removeItem(key);
+          return;
+        }
+      } catch (_) { /* fall back to localStorage */ }
+      localStorage.removeItem(key);
+    }
+
     async function ensureKeyPair() {
       let publicKey = await secureStorageGet('publicKey');
       let privateKey = await secureStorageGet('privateKey');
@@ -551,6 +619,31 @@
     //   4. Manual paste fallback: pasteVerificationLink() (covers https emailed
     //      links today, since Edgar's email template is unchanged and this app
     //      is an additional client, not a replacement).
+    function getLinkedEmail() {
+      return localStorage.getItem('sunmint_linked_email') || '';
+    }
+
+    function renderEmailSection() {
+      const linked = getLinkedEmail();
+      const unlinkedEl = document.getElementById('emailUnlinked');
+      const linkedEl = document.getElementById('emailLinked');
+      if (!unlinkedEl || !linkedEl) return;
+      unlinkedEl.style.display = linked ? 'none' : '';
+      linkedEl.style.display = linked ? '' : 'none';
+      document.getElementById('linkedEmailDisplay').textContent = linked;
+    }
+
+    async function unlinkEmail() {
+      if (!confirm(t('emailUnlinkConfirm'))) return;
+      await secureStorageRemove('publicKey');
+      await secureStorageRemove('privateKey');
+      localStorage.removeItem('sunmint_linked_email');
+      const statusEl = document.getElementById('status');
+      statusEl.textContent = t('emailUnlinked');
+      statusEl.className = 'success';
+      renderEmailSection();
+    }
+
     function extractVerificationParams(rawUrl) {
       try {
         const url = new URL(rawUrl);
@@ -576,6 +669,8 @@
         await submitEmailEvent('EMAIL VERIFICATION EVENT', { 'Verification Key': vk, Email: em });
         statusEl.textContent = t('emailVerified');
         statusEl.className = 'success';
+        localStorage.setItem('sunmint_linked_email', em);
+        renderEmailSection();
       } catch (err) {
         statusEl.textContent = t('emailError') + err.message;
         statusEl.className = 'error';
@@ -1088,10 +1183,11 @@
     requestLocation();
     checkVerificationLink();
     wireNativeVerificationLinks();
+    renderEmailSection();
     updatePendingBadge();
     flushTreeReportQueue(); // backfill anything queued from a previous offline session
     window.addEventListener('online', flushTreeReportQueue); // web/browser fallback
-    // PR9: native sync triggers \u2014 same flush function as PR7.
+    // PR9: native sync triggers — same flush function as PR7.
     // @capacitor/network: flush the queue whenever connectivity is regained.
     // @capacitor/app: flush when the app returns to the foreground.
     if (typeof Capacitor !== 'undefined' && Capacitor.Plugins && Capacitor.Plugins.Network) {
@@ -1104,7 +1200,21 @@
         if (state && state.isActive) flushTreeReportQueue();
       });
     }
+    // Hide the web-only "Download the Android app" CTA inside the native app (we ARE the app).
+    if (typeof Capacitor !== 'undefined' && Capacitor.getPlatform && Capacitor.getPlatform() !== 'web') {
+      const downloadCta = document.getElementById('downloadCta');
+      if (downloadCta) downloadCta.style.display = 'none';
+    }
     startTreeCamera(); // ask for camera permission up front so it's ready when needed
+  </script>
+
+  <!-- Offline support: network-first service worker (fresh by default, cached fallback offline) -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
+        .then(reg => console.log('Sunmint Service Worker registered:', reg.scope))
+        .catch(err => console.warn('Sunmint Service Worker registration failed:', err));
+    }
   </script>
 </body>
 </html>
